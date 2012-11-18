@@ -32,8 +32,9 @@
 
 @implementation ALPickerView
 
-@synthesize delegate = delegate_;
 @synthesize allOptionTitle;
+
+@synthesize pickerViewDelegate = _pickerViewDelegate;
 
 
 #pragma mark - NSObject stuff
@@ -60,37 +61,28 @@
     internalTableView_.scrollsToTop = NO;
     UIImage *backgroundImage = [[UIImage imageNamed:@"wheel_bg"] stretchableImageWithLeftCapWidth:4 topCapHeight:0];
     
-    internalTableView_.backgroundView = [[[UIImageView alloc] initWithImage:backgroundImage] autorelease];
+    internalTableView_.backgroundView = [[UIImageView alloc] initWithImage:backgroundImage];
     [self addSubview:internalTableView_];
     
     // Add shadow to wheel
-    UIImageView *shadow = [[[UIImageView alloc] initWithImage:[UIImage imageNamed:@"wheel_shadow"]] autorelease];
+    UIImageView *shadow = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"wheel_shadow"]];
     shadow.frame = internalTableView_.frame;
     [self addSubview:shadow];
     
     // Add border images
-    UIImageView *leftBorder = [[[UIImageView alloc] initWithImage:[UIImage imageNamed:@"frame_left"]] autorelease];
+    UIImageView *leftBorder = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"frame_left"]];
     leftBorder.frame = CGRectMake(0, 0, 15, 216);
     [self addSubview:leftBorder];
-    UIImageView *rightBorder = [[[UIImageView alloc] initWithImage:[UIImage imageNamed:@"frame_right"]] autorelease];
+    UIImageView *rightBorder = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"frame_right"]];
     rightBorder.frame = CGRectMake(self.frame.size.width - 15, 0, 15, 216);
     [self addSubview:rightBorder];
-    UIImageView *middleBorder = [[[UIImageView alloc] initWithImage:
+    UIImageView *middleBorder = [[UIImageView alloc] initWithImage:
                                   [[UIImage imageNamed:@"frame_middle"] 
-                                   stretchableImageWithLeftCapWidth:0 topCapHeight:10]] autorelease];
+                                   stretchableImageWithLeftCapWidth:0 topCapHeight:10]];
     middleBorder.frame = CGRectMake(15, 0, self.frame.size.width - 30, 216);
     [self addSubview:middleBorder];
   }
   return self;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-- (void)dealloc {
-	[allOptionTitle release];
-	
-	[internalTableView_ release];
-	[super dealloc];
 }
 
 
@@ -108,9 +100,9 @@
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
   // Add 4 additional rows for whitespace on top and bottom
   if (allOptionTitle)
-    return [delegate_ numberOfRowsForPickerView:self] ? [delegate_ numberOfRowsForPickerView:self] + 5 : 0;
+    return [_pickerViewDelegate numberOfRowsForPickerView:self] ? [_pickerViewDelegate numberOfRowsForPickerView:self] + 5 : 0;
   else
-    return [delegate_ numberOfRowsForPickerView:self] ? [delegate_ numberOfRowsForPickerView:self] + 4 : 0;
+    return [_pickerViewDelegate numberOfRowsForPickerView:self] ? [_pickerViewDelegate numberOfRowsForPickerView:self] + 4 : 0;
 }
 
 
@@ -120,10 +112,10 @@
   
   ALPickerViewCell *cell = [aTableView dequeueReusableCellWithIdentifier:CellIdentifier];
   if (cell == nil) {
-    cell = [[[ALPickerViewCell alloc] initWithReuseIdentifier:CellIdentifier] autorelease];
+    cell = [[ALPickerViewCell alloc] initWithReuseIdentifier:CellIdentifier];
   }
   
-  if (indexPath.row < 2 || indexPath.row >= ([delegate_ numberOfRowsForPickerView:self] + (allOptionTitle ? 3 : 2))) {
+  if (indexPath.row < 2 || indexPath.row >= ([_pickerViewDelegate numberOfRowsForPickerView:self] + (allOptionTitle ? 3 : 2))) {
     // Whitespace cell
     cell.textLabel.text = nil;
     cell.selectionStyle = UITableViewCellSelectionStyleNone;
@@ -133,7 +125,7 @@
       cell.textLabel.text = allOptionTitle;
       BOOL allSelected = YES;
       for (int i = 0; i < [self.delegate numberOfRowsForPickerView:self]; i++) {
-        if ([delegate_ pickerView:self selectionStateForRow:i] == NO) {
+        if ([_pickerViewDelegate pickerView:self selectionStateForRow:i] == NO) {
           allSelected = NO;
           break;
         }
@@ -142,8 +134,8 @@
     }
     else {
       int actualRow = indexPath.row - (allOptionTitle ? 3 : 2);
-      cell.textLabel.text = [delegate_ pickerView:self textForRow:actualRow];
-      cell.selectionState = [delegate_ pickerView:self selectionStateForRow:actualRow];
+      cell.textLabel.text = [_pickerViewDelegate pickerView:self textForRow:actualRow];
+      cell.selectionState = [_pickerViewDelegate pickerView:self selectionStateForRow:actualRow];
     }
     cell.selectionStyle = UITableViewCellSelectionStyleBlue;
   }
@@ -154,7 +146,7 @@
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {  
-  if (indexPath.row > 1 && indexPath.row < ([delegate_ numberOfRowsForPickerView:self] + (allOptionTitle ? 3 : 2))) {
+  if (indexPath.row > 1 && indexPath.row < ([_pickerViewDelegate numberOfRowsForPickerView:self] + (allOptionTitle ? 3 : 2))) {
     // Set selection state
     ALPickerViewCell *cell = (ALPickerViewCell *)[tableView cellForRowAtIndexPath:indexPath];
     cell.selectionState = !cell.selectionState;
@@ -164,11 +156,11 @@
     
     if (cell.selectionState != NO) {
       if ([self.delegate respondsToSelector:@selector(pickerView:didCheckRow:)])
-        [delegate_ pickerView:self didCheckRow:actualRow];
+        [_pickerViewDelegate pickerView:self didCheckRow:actualRow];
     }
     else {
       if ([self.delegate respondsToSelector:@selector(pickerView:didUncheckRow:)])
-        [delegate_ pickerView:self didUncheckRow:actualRow];
+        [_pickerViewDelegate pickerView:self didUncheckRow:actualRow];
     }
     
     // Iterate visible cells and update them too
@@ -178,17 +170,17 @@
       if (allOptionTitle && iterateRow == -1) {
         BOOL allSelected = YES;
         for (int i = 0; i < [self.delegate numberOfRowsForPickerView:self]; i++) {
-          if ([delegate_ pickerView:self selectionStateForRow:i] == NO) {
+          if ([_pickerViewDelegate pickerView:self selectionStateForRow:i] == NO) {
             allSelected = NO;
             break;
           }
         }
         aCell.selectionState = allSelected;
       }
-      else if (iterateRow >= 0 && iterateRow < [delegate_ numberOfRowsForPickerView:self]) {
+      else if (iterateRow >= 0 && iterateRow < [_pickerViewDelegate numberOfRowsForPickerView:self]) {
         if (iterateRow == actualRow)
           continue;
-        aCell.selectionState = [delegate_ pickerView:self selectionStateForRow:iterateRow];
+        aCell.selectionState = [_pickerViewDelegate pickerView:self selectionStateForRow:iterateRow];
       }
     }
     

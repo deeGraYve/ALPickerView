@@ -23,18 +23,9 @@
 	
 	// Init picker and add it to view
 	pickerView = [[ALPickerView alloc] initWithFrame:CGRectMake(0, 244, 0, 0)];
-	pickerView.delegate = self;
+	pickerView.pickerViewDelegate = self;
 	[self.view addSubview:pickerView];	
 }
-
-- (void)dealloc {
-	[pickerView release];
-	
-	[selectionStates release];
-	[entries release];
-    [super dealloc];
-}
-
 
 #pragma mark -
 #pragma mark ALPickerView delegate methods
